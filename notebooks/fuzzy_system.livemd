@@ -1,6 +1,59 @@
-<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","path":"/home/alde/Documents/Elixir/repos/flex_playground/notebooks/anfis.livemd"},"name":"anfis.livemd","type":"file"}]} -->
+<!-- livebook:{"file_entries":[{"name":"Fuzzy-Controller.png","type":"attachment"},{"file":{"file_system_id":"local","path":"/home/alde/Documents/Elixir/repos/flex_playground/notebooks/anfis.livemd"},"name":"anfis.livemd","type":"file"},{"name":"error-dot-sets.png","type":"attachment"},{"name":"error_sets.png","type":"attachment"},{"name":"flex-logo.png","type":"attachment"},{"name":"output-sets.png","type":"attachment"},{"name":"rules-matrix.png","type":"attachment"},{"name":"rules.png","type":"attachment"},{"name":"temp-controller.png","type":"attachment"}]} -->
 
 # FLex Playground
+
+## Fuzzy Logic in Elixir
+
+![](files/flex-logo.png)
+
+<!-- livebook:{"break_markdown":true} -->
+
+* Fuzzy Sets
+
+* Fuzzy Variables
+
+* Fuzzy Operators
+
+* Linguistic Rules:
+
+  * Lambda function syntax
+  * Tuple syntax
+
+* Membership functions:
+
+  * Triangular
+  * Trapezoidal
+  * Saturation
+  * Shoulder
+  * Gauss
+  * Generalized Bell
+  * Sigmoid
+  * Z-shaped
+  * S-shaped
+  * Pi-shaped
+  * Linear Combination (Takagi-Sugeno, ANFIS only)
+
+* Fuzzy Inference Systems:
+
+  * Mamdani:
+    * Inference:
+      * Min
+    * Output Combination:
+      * Root-sum-square
+    * Defuzzification:
+      * Centroid
+  * Takagi-Sugeno:
+    * Inference:  
+      * Max
+      * Product
+    * Defuzzification:
+      * Weighted average
+
+## Fuzzy Controller
+
+![](files/Fuzzy-Controller.png)
+
+## Installation
 
 ```elixir
 Mix.install([
@@ -13,8 +66,7 @@ Mix.install([
 ```elixir
 import Flex.Rule
 import IEx.Helpers
-alias Flex.{EngineAdapter.TakagiSugeno, Rule, Set, System, Variable}
-alias Flex.EngineAdapter.{Mamdani, TakagiSugeno}
+alias Flex.{Rule, Set, System, Variable}
 ```
 
 ## Fuzzy Sets
@@ -27,11 +79,21 @@ t_h = Set.new(tag: "too hot", mf_type: "saturation", mf_params: [-2, 0, -4])
 j_r = Set.new(tag: "just right", mf_type: "triangle", mf_params: [-2, 0, 2])
 t_c = Set.new(tag: "too cold", mf_type: "shoulder", mf_params: [0, 2, 4])
 
+h(Set.new())
+```
+
+![](files/error-dot-sets.png)
+
+```elixir
 ## Error Derived Set
 g_h = Set.new(tag: "getting hotter", mf_type: "saturation", mf_params: [-5, 0, -10])
 n_c = Set.new(tag: "no change", mf_type: "triangle", mf_params: [-5, 0, 5])
 g_c = Set.new(tag: "getting colder", mf_type: "shoulder", mf_params: [0, 5, 10])
+```
 
+![](files/output-sets.png)
+
+```elixir
 # Outputs
 
 ## Fan
@@ -69,6 +131,8 @@ h(Variable.new())
 ```
 
 ## Fuzzy Rules
+
+![](files/rules.png)
 
 <!-- livebook:{"reevaluate_automatically":true} -->
 
@@ -132,6 +196,8 @@ rules = [rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9]
 h(Rule.new())
 ```
 
+![](files/rules-matrix.png)
+
 ## Fuzzy System
 
 <!-- livebook:{"reevaluate_automatically":true} -->
@@ -142,7 +208,7 @@ h(Rule.new())
 h(System.start_link())
 ```
 
-## Execute
+## Executions
 
 <!-- livebook:{"reevaluate_automatically":true} -->
 
@@ -153,6 +219,7 @@ h(System.start_link())
 # "dt_error" (-2.5) between "getting hotter" and "no change".
 
 # Output
+
 # The following rules were fired:
 
 # r4 = (at1 ~> "too hot" &&& at2 ~> "no change") >>> con ~> "cool"
@@ -171,6 +238,7 @@ output = System.compute(s_pid, [-1, -2.5])
 # "dt_error" (0) is "no change".
 
 # Output
+
 # The following rule was fired:
 
 # r5 = (at1 ~> "just right" &&& at2 ~> "no change") >>> con ~> "do nothing"
@@ -186,6 +254,7 @@ output = System.compute(s_pid, [0, 0])
 # "dt_error" (2.5) between "getting colder" and "no change".
 
 # Output
+
 # The following rules were fired:
 
 # r4 = (at1 ~> "too cold" &&& at2 ~> "no change") >>> con ~> "heat"
@@ -197,4 +266,4 @@ output = System.compute(s_pid, [0, 0])
 output = System.compute(s_pid, [1, 2.5])
 ```
 
-<!-- livebook:{"offset":5409,"stamp":{"token":"QTEyOEdDTQ.tkmH4_whq8dXfYXNMR1w8i-034gi6DQ0TADeMFEFUNh9pK871XXluUQVPws.0W_Ycu_xW5MKTfE8.y1hXZr4ndmRwI04PJsaMQJgSDtNy7XNy7i98eShlwr29qu-G.y0j8gC0WujH1P63dXI5tdg","version":1}} -->
+<!-- livebook:{"offset":6648,"stamp":{"token":"QTEyOEdDTQ.ScYpxDjiy1pZ7kpDVzAOzmxdWTpAXIBF3LStZYaTyQFS-oGjYkzPXYaL00Y.tvhb7Q0xL1cWJSTj.sE6SQ3F19jhidfib68XTrzvPZfym4N1utu63StNLmtUilzF-4TULMLysdHFC4ilrPvVKstZFt3bzeQ.21z0J0jzLQNLZfoqVyR1Pg","version":1}} -->
