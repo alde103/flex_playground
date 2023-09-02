@@ -1,0 +1,200 @@
+<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","path":"/home/alde/Documents/Elixir/repos/flex_playground/notebooks/anfis.livemd"},"name":"anfis.livemd","type":"file"}]} -->
+
+# FLex Playground
+
+```elixir
+Mix.install([
+  {:flex, "~> 0.2"}
+])
+```
+
+## Setups
+
+```elixir
+import Flex.Rule
+import IEx.Helpers
+alias Flex.{EngineAdapter.TakagiSugeno, Rule, Set, System, Variable}
+alias Flex.EngineAdapter.{Mamdani, TakagiSugeno}
+```
+
+## Fuzzy Sets
+
+```elixir
+# Inputs
+
+## Error Sets
+t_h = Set.new(tag: "too hot", mf_type: "saturation", mf_params: [-2, 0, -4])
+j_r = Set.new(tag: "just right", mf_type: "triangle", mf_params: [-2, 0, 2])
+t_c = Set.new(tag: "too cold", mf_type: "shoulder", mf_params: [0, 2, 4])
+
+## Error Derived Set
+g_h = Set.new(tag: "getting hotter", mf_type: "saturation", mf_params: [-5, 0, -10])
+n_c = Set.new(tag: "no change", mf_type: "triangle", mf_params: [-5, 0, 5])
+g_c = Set.new(tag: "getting colder", mf_type: "shoulder", mf_params: [0, 5, 10])
+
+# Outputs
+
+## Fan
+co = Set.new(tag: "cool", mf_type: "saturation", mf_params: [-50, 0, -100])
+d_n = Set.new(tag: "do nothing", mf_type: "triangle", mf_params: [-50, 0, 50])
+he = Set.new(tag: "heat", mf_type: "shoulder", mf_params: [0, 50, 100])
+
+h(Set.new())
+```
+
+## Fuzzy Variables
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+# Inputs
+
+## Error Variable
+fuzzy_sets = [t_h, j_r, t_c]
+error = Variable.new(tag: "error", fuzzy_sets: fuzzy_sets, type: :antecedent, range: -4..4)
+
+## Error Derived Variable
+fuzzy_sets = [g_h, n_c, g_c]
+
+dt_error =
+  Variable.new(tag: "dt_error", fuzzy_sets: fuzzy_sets, type: :antecedent, range: -10..10)
+
+# Output
+
+## Fan Variable
+fuzzy_sets = [co, d_n, he]
+output = Variable.new(tag: "output", fuzzy_sets: fuzzy_sets, type: :consequent, range: -100..100)
+
+h(Variable.new())
+```
+
+## Fuzzy Rules
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+r1 = fn [at1, at2, con] ->
+  (at1 ~> "too hot" &&& at2 ~> "getting colder") >>> con ~> "cool"
+end
+
+r2 = fn [at1, at2, con] ->
+  (at1 ~> "just right" &&& at2 ~> "getting colder") >>> con ~> "heat"
+end
+
+r3 = fn [at1, at2, con] ->
+  (at1 ~> "too cold" &&& at2 ~> "getting colder") >>> con ~> "heat"
+end
+
+r4 = fn [at1, at2, con] ->
+  (at1 ~> "too hot" &&& at2 ~> "no change") >>> con ~> "cool"
+end
+
+r5 = fn [at1, at2, con] ->
+  (at1 ~> "just right" &&& at2 ~> "no change") >>> con ~> "do nothing"
+end
+
+r6 = fn [at1, at2, con] ->
+  (at1 ~> "too cold" &&& at2 ~> "no change") >>> con ~> "heat"
+end
+
+r7 = fn [at1, at2, con] ->
+  (at1 ~> "too hot" &&& at2 ~> "getting hotter") >>> con ~> "cool"
+end
+
+r8 = fn [at1, at2, con] ->
+  (at1 ~> "just right" &&& at2 ~> "getting hotter") >>> con ~> "cool"
+end
+
+r9 = fn [at1, at2, con] ->
+  (at1 ~> "too cold" &&& at2 ~> "getting hotter") >>> con ~> "heat"
+end
+
+rule1 = Rule.new(statement: r1, consequent: output.tag, antecedent: [error.tag, dt_error.tag])
+
+rule2 = Rule.new(statement: r2, consequent: output.tag, antecedent: [error.tag, dt_error.tag])
+
+rule3 = Rule.new(statement: r3, consequent: output.tag, antecedent: [error.tag, dt_error.tag])
+
+rule4 = Rule.new(statement: r4, consequent: output.tag, antecedent: [error.tag, dt_error.tag])
+
+rule5 = Rule.new(statement: r5, consequent: output.tag, antecedent: [error.tag, dt_error.tag])
+
+rule6 = Rule.new(statement: r6, consequent: output.tag, antecedent: [error.tag, dt_error.tag])
+
+rule7 = Rule.new(statement: r7, consequent: output.tag, antecedent: [error.tag, dt_error.tag])
+
+rule8 = Rule.new(statement: r8, consequent: output.tag, antecedent: [error.tag, dt_error.tag])
+
+rule9 = Rule.new(statement: r9, consequent: output.tag, antecedent: [error.tag, dt_error.tag])
+
+rules = [rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9]
+
+h(Rule.new())
+```
+
+## Fuzzy System
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+{:ok, s_pid} = System.start_link(antecedent: [error, dt_error], consequent: output, rules: rules)
+
+h(System.start_link())
+```
+
+## Execute
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+# Inputs
+
+# "error" (-1) between "too hot" and "just right".
+# "dt_error" (-2.5) between "getting hotter" and "no change".
+
+# Output
+# The following rules were fired:
+
+# r4 = (at1 ~> "too hot" &&& at2 ~> "no change") >>> con ~> "cool"
+# r5 = (at1 ~> "just right" &&& at2 ~> "no change") >>> con ~> "do nothing"
+# r7 = (at1 ~> "too hot" &&& at2 ~> "getting hotter") >>> con ~> "cool"
+# r8 = (at1 ~> "just right" &&& at2 ~> "getting hotter") >>> con ~> "cool"
+
+# therefore the Fan should "cool".
+output = System.compute(s_pid, [-1, -2.5])
+```
+
+```elixir
+# Inputs
+
+# "error" (0)  is "just right".
+# "dt_error" (0) is "no change".
+
+# Output
+# The following rule was fired:
+
+# r5 = (at1 ~> "just right" &&& at2 ~> "no change") >>> con ~> "do nothing"
+
+# therefore the Fan should "do_nothing".
+output = System.compute(s_pid, [0, 0])
+```
+
+```elixir
+# Inputs
+
+# "error" (1) between "too cold" and "just right".
+# "dt_error" (2.5) between "getting colder" and "no change".
+
+# Output
+# The following rules were fired:
+
+# r4 = (at1 ~> "too cold" &&& at2 ~> "no change") >>> con ~> "heat"
+# r5 = (at1 ~> "just right" &&& at2 ~> "no change") >>> con ~> "do nothing"
+# r7 = (at1 ~> "too cold" &&& at2 ~> "getting colder") >>> con ~> "heat"
+# r8 = (at1 ~> "just right" &&& at2 ~> "getting colder") >>> con ~> "heat"
+
+# therefore the Fan should "cool".
+output = System.compute(s_pid, [1, 2.5])
+```
+
+<!-- livebook:{"offset":5409,"stamp":{"token":"QTEyOEdDTQ.tkmH4_whq8dXfYXNMR1w8i-034gi6DQ0TADeMFEFUNh9pK871XXluUQVPws.0W_Ycu_xW5MKTfE8.y1hXZr4ndmRwI04PJsaMQJgSDtNy7XNy7i98eShlwr29qu-G.y0j8gC0WujH1P63dXI5tdg","version":1}} -->
