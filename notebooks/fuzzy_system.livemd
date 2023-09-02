@@ -8,6 +8,12 @@
 
 <!-- livebook:{"break_markdown":true} -->
 
+<p style="text-align: center;">
+https://github.com/valiot/flex
+</p>
+
+<!-- livebook:{"break_markdown":true} -->
+
 * Fuzzy Sets
 
 * Fuzzy Variables
@@ -266,4 +272,4 @@ output = System.compute(s_pid, [0, 0])
 output = System.compute(s_pid, [1, 2.5])
 ```
 
-<!-- livebook:{"offset":6648,"stamp":{"token":"QTEyOEdDTQ.ScYpxDjiy1pZ7kpDVzAOzmxdWTpAXIBF3LStZYaTyQFS-oGjYkzPXYaL00Y.tvhb7Q0xL1cWJSTj.sE6SQ3F19jhidfib68XTrzvPZfym4N1utu63StNLmtUilzF-4TULMLysdHFC4ilrPvVKstZFt3bzeQ.21z0J0jzLQNLZfoqVyR1Pg","version":1}} -->
+<!-- livebook:{"offset":6760,"stamp":{"token":"QTEyOEdDTQ.O2_pvDpRsk_MQlHZnFligsabwyakrQWBiGz4YsrNQeq3v-cMstv_z9qDEL4.p2-xsxERGIOAgAq2.98pbtKNe9rLa2E0cWGb0l4a-lxBN6RrJLDQq8xDP8HPewwCWYG98e-XIjPRURbyHwbjatp9DIFIQsw.sIF9lmg1CY9bRAVV9-ecpA","version":1}} -->

@@ -1,4 +1,4 @@
-<!-- livebook:{"persist_outputs":true} -->
+<!-- livebook:{"file_entries":[{"name":"anfis-problem.png","type":"attachment"},{"name":"anfis.png","type":"attachment"},{"name":"fuzzy-system.png","type":"attachment"}],"persist_outputs":true} -->
 
 # Adaptive Neuro Fuzzy Inference System
 
@@ -16,22 +16,32 @@ Mix.install([
 :ok
 ```
 
-## Setup
+## The Problem
+
+![](files/anfis-problem.png)
+
+## Framework Extrapolation
+
+![](files/fuzzy-system.png)
+
+## Fuzzy Network
+
+![](files/anfis.png)
+
+## Import & Aliases
 
 ```elixir
-import Flex.Rule
-require Logger
-
 alias Flex.{EngineAdapter.ANFIS, Rule, Set, System, Variable}
+import Flex.Rule
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-[Flex.EngineAdapter.ANFIS, Flex.Rule, Flex.Set, Flex.System, Flex.Variable]
+Flex.Rule
 ```
 
-## Section
+## Training Data
 
 ```elixir
 inputs =
@@ -46,6 +56,19 @@ outputs =
   |> CSV.decode!()
   |> Enum.map(fn [_x1, _x2, y] -> String.to_float(y) end)
 
+:ok
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## Fuzzy Inputs
+
+```elixir
+# X1
 small = Set.new(tag: "small", mf_type: "bell", mf_params: [0, 1.2, 1.2])
 mid = Set.new(tag: "mid", mf_type: "bell", mf_params: [-1, 1.6, 2.4])
 large = Set.new(tag: "large", mf_type: "bell", mf_params: [-4, 1.1, 12])
@@ -54,6 +77,7 @@ extra_large = Set.new(tag: "extra_large", mf_type: "bell", mf_params: [-7, 1.4, 
 fuzzy_sets = [small, mid, large, extra_large]
 x1 = Variable.new(tag: "x1", fuzzy_sets: fuzzy_sets, type: :antecedent, range: -4..4)
 
+# X2
 small = Set.new(tag: "small", mf_type: "bell", mf_params: [1, 1.4, 2.3])
 mid = Set.new(tag: "mid", mf_type: "bell", mf_params: [2, 1.3, 3.5])
 large = Set.new(tag: "large", mf_type: "bell", mf_params: [-2, 15, 11.3])
@@ -62,6 +86,18 @@ extra_large = Set.new(tag: "extra_large", mf_type: "bell", mf_params: [-10.5, 1.
 fuzzy_sets = [small, mid, large, extra_large]
 x2 = Variable.new(tag: "x2", fuzzy_sets: fuzzy_sets, type: :antecedent, range: -1..6)
 
+:ok
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## Fuzzy Output
+
+```elixir
 # Random Initialization
 y1 = Set.new(tag: "y1", mf_type: "linear_combination", mf_params: [0, 0, 0])
 y2 = Set.new(tag: "y2", mf_type: "linear_combination", mf_params: [0, 0, 0])
@@ -82,7 +118,18 @@ y16 = Set.new(tag: "y16", mf_type: "linear_combination", mf_params: [0, 0, 0])
 
 fuzzy_sets = [y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14, y15, y16]
 y = Variable.new(tag: "y", fuzzy_sets: fuzzy_sets, type: :consequent, range: -10..10)
+:ok
+```
 
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## Fuzzy Rules
+
+```elixir
 r1 = fn [at1, at2, con] ->
   tau(at1 ~> "small", at2 ~> "small") >>> con ~> "y1"
 end
@@ -202,6 +249,18 @@ sets_in_rules = [
   ["extra_large", "extra_large"]
 ]
 
+:ok
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## Fuzzy System
+
+```elixir
 {:ok, s_pid} =
   System.start_link(
     engine_type: ANFIS,
@@ -211,9 +270,17 @@ sets_in_rules = [
     sets_in_rules: sets_in_rules,
     learning_rate: 1.75
   )
+```
 
-System.hybrid_offline_learning(s_pid, inputs, outputs, 100)
+<!-- livebook:{"output":true} -->
 
+```
+{:ok, #PID<0.384.0>}
+```
+
+## Before training
+
+```elixir
 predicted = Enum.map(inputs, fn input -> System.compute(s_pid, input) end)
 
 predicted_dataset =
@@ -221,116 +288,33 @@ predicted_dataset =
 
 desired_dataset =
   for {index, desired_data} <- Enum.zip(1..121, outputs), do: [index, desired_data]
+
+my_data = %{predicted_dataset: predicted, desired_dataset: outputs, sample: 1..121}
+
+:ok
 ```
 
 <!-- livebook:{"output":true} -->
 
 ```
-[
-  [1, 0.00295958969093304],
-  [2, -0.00672789715494514],
-  [3, 0.00253346549549811],
-  [4, 0.0102929133555317],
-  [5, -0.0247338498135276],
-  [6, -0.054402111088937],
-  [7, -0.0247338498135276],
-  [8, 0.0102929133555317],
-  [9, 0.00253346549549811],
-  [10, -0.00672789715494514],
-  [11, 0.00295958969093304],
-  [12, -0.00672789715494514],
-  [13, 0.0152942146900264],
-  [14, -0.00575920890369767],
-  [15, -0.0233983996811891],
-  [16, 0.0562263067414631],
-  [17, 0.123669780827923],
-  [18, 0.0562263067414631],
-  [19, -0.0233983996811891],
-  [20, -0.00575920890369767],
-  [21, 0.0152942146900264],
-  [22, -0.00672789715494514],
-  [23, 0.00253346549549811],
-  [24, -0.00575920890369767],
-  [25, 0.00216869501760428],
-  [26, 0.00881093109436063],
-  [27, -0.0211726494606249],
-  [28, -0.046569249699821],
-  [29, -0.0211726494606249],
-  [30, 0.00881093109436063],
-  [31, 0.00216869501760428],
-  [32, -0.00575920890369767],
-  [33, 0.00253346549549811],
-  [34, 0.0102929133555317],
-  [35, -0.0233983996811891],
-  [36, 0.00881093109436063],
-  [37, 0.0357968760565192],
-  [38, -0.0860198201998443],
-  [39, -0.189200623826982],
-  [40, -0.0860198201998443],
-  [41, 0.0357968760565192],
-  [42, 0.00881093109436063],
-  [43, -0.0233983996811891],
-  [44, 0.0102929133555317],
-  [45, -0.0247338498135276],
-  [46, 0.0562263067414631],
-  [47, -0.0211726494606249],
-  [48, -0.0860198201998443],
-  [49, ...],
-  [...],
-  ...
-]
+:ok
 ```
 
-```elixir
-my_data = %{predicted_dataset: predicted, desired_dataset: outputs, x: 1..121}
-```
-
-<!-- livebook:{"output":true} -->
-
-```
-%{
-  x: 1..121,
-  predicted_dataset: [-5.160802630185623e-4, -3.859470543926198e-4, 0.0019525446847401902,
-   0.0035887449098013884, -0.03728190219283441, -0.05567491153177847, -0.018963366299440537,
-   9.535116735757777e-4, 0.0020223572374585383, 0.0022598531300061487, 6.275633257423012e-4,
-   3.8070816473427494e-4, 2.4711407989716375e-4, -0.00355681631176353, 0.002204356630627511,
-   0.0874281582749993, 0.10716311011648469, 0.04231065609456126, 8.923249991688932e-4,
-   -0.004341513267378436, 9.592595191748852e-5, -0.00861639326716727, -5.281191753430005e-4,
-   -3.0490573368828386e-4, 0.0020768737472883266, 0.00391172763570084, -0.03249565270084797,
-   -0.049714360812156924, -0.01694502120030308, 0.0011358836810306068, 0.0022098368832630653,
-   0.002546602891835438, 8.847062335428328e-4, -0.0010531879956514432, 7.560852674181356e-4,
-   0.007286145809734127, 0.0035463489035996313, -0.12173599119475313, -0.16435453366768923,
-   -0.060509114203521154, 0.0013252387780395781, 0.00681199142409445, 0.003406710221943316,
-   0.00866926188306364, -0.01034515585946672, 0.04288224893309798, -0.01751870779409946,
-   -0.07583253510370519, ...],
-  desired_dataset: [0.00295958969093304, -0.00672789715494514, 0.00253346549549811,
-   0.0102929133555317, -0.0247338498135276, -0.054402111088937, -0.0247338498135276,
-   0.0102929133555317, 0.00253346549549811, -0.00672789715494514, 0.00295958969093304,
-   -0.00672789715494514, 0.0152942146900264, -0.00575920890369767, -0.0233983996811891,
-   0.0562263067414631, 0.123669780827923, 0.0562263067414631, -0.0233983996811891,
-   -0.00575920890369767, 0.0152942146900264, -0.00672789715494514, 0.00253346549549811,
-   -0.00575920890369767, 0.00216869501760428, 0.00881093109436063, -0.0211726494606249,
-   -0.046569249699821, -0.0211726494606249, 0.00881093109436063, 0.00216869501760428,
-   -0.00575920890369767, 0.00253346549549811, 0.0102929133555317, -0.0233983996811891,
-   0.00881093109436063, 0.0357968760565192, -0.0860198201998443, -0.189200623826982,
-   -0.0860198201998443, 0.0357968760565192, 0.00881093109436063, -0.0233983996811891,
-   0.0102929133555317, -0.0247338498135276, 0.0562263067414631, -0.0211726494606249, ...]
-}
-```
-
-<!-- livebook:{"attrs":{"chart_title":"ANFIS Output","height":750,"layers":[{"active":true,"chart_type":"line","color_field":null,"color_field_aggregate":null,"color_field_bin":null,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"my_data","geodata_color":"blue","latitude_field":null,"longitude_field":null,"x_field":"x","x_field_aggregate":null,"x_field_bin":null,"x_field_scale_type":null,"x_field_type":"quantitative","y_field":"desired_dataset","y_field_aggregate":null,"y_field_bin":null,"y_field_scale_type":null,"y_field_type":"quantitative"},{"active":true,"chart_type":"point","color_field":null,"color_field_aggregate":null,"color_field_bin":null,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"my_data","geodata_color":"blue","latitude_field":null,"longitude_field":null,"x_field":"x","x_field_aggregate":null,"x_field_bin":null,"x_field_scale_type":null,"x_field_type":"quantitative","y_field":"predicted_dataset","y_field_aggregate":null,"y_field_bin":null,"y_field_scale_type":null,"y_field_type":"quantitative"}],"vl_alias":"Elixir.VegaLite","width":780},"chunks":null,"kind":"Elixir.KinoVegaLite.ChartCell","livebook_object":"smart_cell"} -->
+<!-- livebook:{"attrs":{"chart_title":"ANFIS Output","height":750,"layers":[{"active":true,"chart_type":"line","color_field":null,"color_field_aggregate":null,"color_field_bin":null,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"my_data","geodata_color":"blue","latitude_field":null,"longitude_field":null,"x_field":"sample","x_field_aggregate":null,"x_field_bin":null,"x_field_scale_type":null,"x_field_type":"quantitative","y_field":"desired_dataset","y_field_aggregate":null,"y_field_bin":null,"y_field_scale_type":null,"y_field_type":"quantitative"},{"active":true,"chart_type":"point","color_field":null,"color_field_aggregate":null,"color_field_bin":null,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"my_data","geodata_color":"blue","latitude_field":null,"longitude_field":null,"x_field":"sample","x_field_aggregate":null,"x_field_bin":null,"x_field_scale_type":null,"x_field_type":"quantitative","y_field":"predicted_dataset","y_field_aggregate":null,"y_field_bin":null,"y_field_scale_type":null,"y_field_type":"quantitative"}],"vl_alias":"Elixir.VegaLite","width":780},"chunks":null,"kind":"Elixir.KinoVegaLite.ChartCell","livebook_object":"smart_cell"} -->
 
 ```elixir
 VegaLite.new(width: 780, height: 750, title: "ANFIS Output")
-|> VegaLite.data_from_values(my_data, only: ["x", "desired_dataset", "predicted_dataset"])
+|> VegaLite.data_from_values(my_data,
+  only: ["sample", "desired_dataset", "predicted_dataset"]
+)
 |> VegaLite.layers([
   VegaLite.new()
   |> VegaLite.mark(:line)
-  |> VegaLite.encode_field(:x, "x", type: :quantitative)
+  |> VegaLite.encode_field(:x, "sample", type: :quantitative)
   |> VegaLite.encode_field(:y, "desired_dataset", type: :quantitative),
   VegaLite.new()
   |> VegaLite.mark(:point)
-  |> VegaLite.encode_field(:x, "x", type: :quantitative)
+  |> VegaLite.encode_field(:x, "sample", type: :quantitative)
   |> VegaLite.encode_field(:y, "predicted_dataset", type: :quantitative)
 ])
 ```
@@ -338,5 +322,64 @@ VegaLite.new(width: 780, height: 750, title: "ANFIS Output")
 <!-- livebook:{"output":true} -->
 
 ```vega-lite
-{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"values":[{"desired_dataset":0.00295958969093304,"predicted_dataset":-5.160802630185623e-4,"x":1},{"desired_dataset":-0.00672789715494514,"predicted_dataset":-3.859470543926198e-4,"x":2},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0019525446847401902,"x":3},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0035887449098013884,"x":4},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.03728190219283441,"x":5},{"desired_dataset":-0.054402111088937,"predicted_dataset":-0.05567491153177847,"x":6},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.018963366299440537,"x":7},{"desired_dataset":0.0102929133555317,"predicted_dataset":9.535116735757777e-4,"x":8},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0020223572374585383,"x":9},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0022598531300061487,"x":10},{"desired_dataset":0.00295958969093304,"predicted_dataset":6.275633257423012e-4,"x":11},{"desired_dataset":-0.00672789715494514,"predicted_dataset":3.8070816473427494e-4,"x":12},{"desired_dataset":0.0152942146900264,"predicted_dataset":2.4711407989716375e-4,"x":13},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-0.00355681631176353,"x":14},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.002204356630627511,"x":15},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0874281582749993,"x":16},{"desired_dataset":0.123669780827923,"predicted_dataset":0.10716311011648469,"x":17},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.04231065609456126,"x":18},{"desired_dataset":-0.0233983996811891,"predicted_dataset":8.923249991688932e-4,"x":19},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-0.004341513267378436,"x":20},{"desired_dataset":0.0152942146900264,"predicted_dataset":9.592595191748852e-5,"x":21},{"desired_dataset":-0.00672789715494514,"predicted_dataset":-0.00861639326716727,"x":22},{"desired_dataset":0.00253346549549811,"predicted_dataset":-5.281191753430005e-4,"x":23},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-3.0490573368828386e-4,"x":24},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.0020768737472883266,"x":25},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.00391172763570084,"x":26},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.03249565270084797,"x":27},{"desired_dataset":-0.046569249699821,"predicted_dataset":-0.049714360812156924,"x":28},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.01694502120030308,"x":29},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0011358836810306068,"x":30},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.0022098368832630653,"x":31},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.002546602891835438,"x":32},{"desired_dataset":0.00253346549549811,"predicted_dataset":8.847062335428328e-4,"x":33},{"desired_dataset":0.0102929133555317,"predicted_dataset":-0.0010531879956514432,"x":34},{"desired_dataset":-0.0233983996811891,"predicted_dataset":7.560852674181356e-4,"x":35},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.007286145809734127,"x":36},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.0035463489035996313,"x":37},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.12173599119475313,"x":38},{"desired_dataset":-0.189200623826982,"predicted_dataset":-0.16435453366768923,"x":39},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.060509114203521154,"x":40},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.0013252387780395781,"x":41},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.00681199142409445,"x":42},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.003406710221943316,"x":43},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.00866926188306364,"x":44},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.01034515585946672,"x":45},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.04288224893309798,"x":46},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.01751870779409946,"x":47},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.07583253510370519,"x":48},{"desired_dataset":0.206705452607952,"predicted_dataset":0.20546453450322627,"x":49},{"desired_dataset":0.454648713412841,"predicted_dataset":0.45001233895740844,"x":50},{"desired_dataset":0.206705452607952,"predicted_dataset":0.2017969873682074,"x":51},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.07066080362445355,"x":52},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.05047097282949654,"x":53},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.06317869122318726,"x":54},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.022537268632603604,"x":55},{"desired_dataset":-0.054402111088937,"predicted_dataset":-0.0066099303239168855,"x":56},{"desired_dataset":0.123669780827923,"predicted_dataset":0.07766509868926592,"x":57},{"desired_dataset":-0.046569249699821,"predicted_dataset":-0.05214942993659108,"x":58},{"desired_dataset":-0.189200623826982,"predicted_dataset":-0.150404865734235,"x":59},{"desired_dataset":0.454648713412841,"predicted_dataset":0.4446481190772033,"x":60},{"desired_dataset":1.0,"predicted_dataset":0.9854107312853814,"x":61},{"desired_dataset":0.454648713412841,"predicted_dataset":0.4313810599411108,"x":62},{"desired_dataset":-0.189200623826982,"predicted_dataset":-0.15986361330086296,"x":63},{"desired_dataset":-0.046569249699821,"predicted_dataset":-0.1040474984167466,"x":64},{"desired_dataset":0.123669780827923,"predicted_dataset":0.1438871487769054,"x":65},{"desired_dataset":-0.054402111088937,"predicted_dataset":-0.04734852348855008,"x":66},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.00564349681542975,"x":67},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.031527131573741825,"x":68},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.01904311561072686,"x":69},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.06485725273869575,"x":70},{"desired_dataset":0.206705452607952,"predicted_dataset":0.2116646642289375,"x":71},{"desired_dataset":0.454648713412841,"predicted_dataset":0.4315095950992356,"x":72},{"desired_dataset":0.206705452607952,"predicted_dataset":0.18439511763397873,"x":73},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.05559357208722816,"x":74},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.04190693877273411,"x":75},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.04330506288386707,"x":76},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.018581364027509446,"x":77},{"desired_dataset":0.0102929133555317,"predicted_dataset":-0.004650176704778464,"x":78},{"desired_dataset":-0.0233983996811891,"predicted_dataset":-0.002227597478670934,"x":79},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.008347252845840961,"x":80},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.001385485782164815,"x":81},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.05506951646954495,"x":82},{"desired_dataset":-0.189200623826982,"predicted_dataset":-0.0943065183195629,"x":83},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.04364662223591035,"x":84},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.011372227517820702,"x":85},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.006568523299894113,"x":86},{"desired_dataset":-0.0233983996811891,"predicted_dataset":-0.017818689603864374,"x":87},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.00846393556000204,"x":88},{"desired_dataset":0.00253346549549811,"predicted_dataset":-0.0037894129587373996,"x":89},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-0.002518328539746849,"x":90},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.006644929119402089,"x":91},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0029639249956075852,"x":92},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.007508871777506097,"x":93},{"desired_dataset":-0.046569249699821,"predicted_dataset":-0.036138231672104226,"x":94},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.022060411371789632,"x":95},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.012623255311950634,"x":96},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.005121720693516103,"x":97},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-0.01892512805923524,"x":98},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.00511228579632669,"x":99},{"desired_dataset":-0.00672789715494514,"predicted_dataset":-0.002610005881400253,"x":100},{"desired_dataset":0.0152942146900264,"predicted_dataset":-0.001817676316397362,"x":101},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.003968502621891789,"x":102},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0036810163848671213,"x":103},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.01900250306318563,"x":104},{"desired_dataset":0.123669780827923,"predicted_dataset":0.0037145614901007793,"x":105},{"desired_dataset":0.0562263067414631,"predicted_dataset":-0.004085323617296228,"x":106},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.009231148454834264,"x":107},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0030791351751267887,"x":108},{"desired_dataset":0.0152942146900264,"predicted_dataset":-0.012063623357795207,"x":109},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.001928762974116593,"x":110},{"desired_dataset":0.00295958969093304,"predicted_dataset":-9.201492482597074e-4,"x":111},{"desired_dataset":-0.00672789715494514,"predicted_dataset":-7.14171273141435e-4,"x":112},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.00206254890097759,"x":113},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.005485229491169672,"x":114},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.004752826611163203,"x":115},{"desired_dataset":-0.054402111088937,"predicted_dataset":-0.016532694727909903,"x":116},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.005892020398919341,"x":117},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0025477562671634944,"x":118},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0027667093555483924,"x":119},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.002401775201669535,"x":120},{"desired_dataset":0.00295958969093304,"predicted_dataset":0.0012732694544752353,"x":121}]},"height":750,"layer":[{"encoding":{"x":{"field":"x","type":"quantitative"},"y":{"field":"desired_dataset","type":"quantitative"}},"mark":"line"},{"encoding":{"x":{"field":"x","type":"quantitative"},"y":{"field":"predicted_dataset","type":"quantitative"}},"mark":"point"}],"title":"ANFIS Output","width":780}
+{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"values":[{"desired_dataset":0.00295958969093304,"predicted_dataset":0.0,"sample":1},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0,"sample":2},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0,"sample":3},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0,"sample":4},{"desired_dataset":-0.0247338498135276,"predicted_dataset":0.0,"sample":5},{"desired_dataset":-0.054402111088937,"predicted_dataset":0.0,"sample":6},{"desired_dataset":-0.0247338498135276,"predicted_dataset":0.0,"sample":7},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0,"sample":8},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0,"sample":9},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0,"sample":10},{"desired_dataset":0.00295958969093304,"predicted_dataset":0.0,"sample":11},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0,"sample":12},{"desired_dataset":0.0152942146900264,"predicted_dataset":0.0,"sample":13},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0,"sample":14},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0,"sample":15},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0,"sample":16},{"desired_dataset":0.123669780827923,"predicted_dataset":0.0,"sample":17},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0,"sample":18},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0,"sample":19},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0,"sample":20},{"desired_dataset":0.0152942146900264,"predicted_dataset":0.0,"sample":21},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0,"sample":22},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0,"sample":23},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0,"sample":24},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.0,"sample":25},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0,"sample":26},{"desired_dataset":-0.0211726494606249,"predicted_dataset":0.0,"sample":27},{"desired_dataset":-0.046569249699821,"predicted_dataset":0.0,"sample":28},{"desired_dataset":-0.0211726494606249,"predicted_dataset":0.0,"sample":29},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0,"sample":30},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.0,"sample":31},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0,"sample":32},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0,"sample":33},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0,"sample":34},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0,"sample":35},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0,"sample":36},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.0,"sample":37},{"desired_dataset":-0.0860198201998443,"predicted_dataset":0.0,"sample":38},{"desired_dataset":-0.189200623826982,"predicted_dataset":0.0,"sample":39},{"desired_dataset":-0.0860198201998443,"predicted_dataset":0.0,"sample":40},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.0,"sample":41},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0,"sample":42},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0,"sample":43},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0,"sample":44},{"desired_dataset":-0.0247338498135276,"predicted_dataset":0.0,"sample":45},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0,"sample":46},{"desired_dataset":-0.0211726494606249,"predicted_dataset":0.0,"sample":47},{"desired_dataset":-0.0860198201998443,"predicted_dataset":0.0,"sample":48},{"desired_dataset":0.206705452607952,"predicted_dataset":0.0,"sample":49},{"desired_dataset":0.454648713412841,"predicted_dataset":0.0,"sample":50},{"desired_dataset":0.206705452607952,"predicted_dataset":0.0,"sample":51},{"desired_dataset":-0.0860198201998443,"predicted_dataset":0.0,"sample":52},{"desired_dataset":-0.0211726494606249,"predicted_dataset":0.0,"sample":53},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0,"sample":54},{"desired_dataset":-0.0247338498135276,"predicted_dataset":0.0,"sample":55},{"desired_dataset":-0.054402111088937,"predicted_dataset":0.0,"sample":56},{"desired_dataset":0.123669780827923,"predicted_dataset":0.0,"sample":57},{"desired_dataset":-0.046569249699821,"predicted_dataset":0.0,"sample":58},{"desired_dataset":-0.189200623826982,"predicted_dataset":0.0,"sample":59},{"desired_dataset":0.454648713412841,"predicted_dataset":0.0,"sample":60},{"desired_dataset":1.0,"predicted_dataset":0.0,"sample":61},{"desired_dataset":0.454648713412841,"predicted_dataset":0.0,"sample":62},{"desired_dataset":-0.189200623826982,"predicted_dataset":0.0,"sample":63},{"desired_dataset":-0.046569249699821,"predicted_dataset":0.0,"sample":64},{"desired_dataset":0.123669780827923,"predicted_dataset":0.0,"sample":65},{"desired_dataset":-0.054402111088937,"predicted_dataset":0.0,"sample":66},{"desired_dataset":-0.0247338498135276,"predicted_dataset":0.0,"sample":67},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0,"sample":68},{"desired_dataset":-0.0211726494606249,"predicted_dataset":0.0,"sample":69},{"desired_dataset":-0.0860198201998443,"predicted_dataset":0.0,"sample":70},{"desired_dataset":0.206705452607952,"predicted_dataset":0.0,"sample":71},{"desired_dataset":0.454648713412841,"predicted_dataset":0.0,"sample":72},{"desired_dataset":0.206705452607952,"predicted_dataset":0.0,"sample":73},{"desired_dataset":-0.0860198201998443,"predicted_dataset":0.0,"sample":74},{"desired_dataset":-0.0211726494606249,"predicted_dataset":0.0,"sample":75},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0,"sample":76},{"desired_dataset":-0.0247338498135276,"predicted_dataset":0.0,"sample":77},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0,"sample":78},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0,"sample":79},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0,"sample":80},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.0,"sample":81},{"desired_dataset":-0.0860198201998443,"predicted_dataset":0.0,"sample":82},{"desired_dataset":-0.189200623826982,"predicted_dataset":0.0,"sample":83},{"desired_dataset":-0.0860198201998443,"predicted_dataset":0.0,"sample":84},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.0,"sample":85},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0,"sample":86},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0,"sample":87},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0,"sample":88},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0,"sample":89},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0,"sample":90},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.0,"sample":91},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0,"sample":92},{"desired_dataset":-0.0211726494606249,"predicted_dataset":0.0,"sample":93},{"desired_dataset":-0.046569249699821,"predicted_dataset":0.0,"sample":94},{"desired_dataset":-0.0211726494606249,"predicted_dataset":0.0,"sample":95},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0,"sample":96},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.0,"sample":97},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0,"sample":98},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0,"sample":99},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0,"sample":100},{"desired_dataset":0.0152942146900264,"predicted_dataset":0.0,"sample":101},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0,"sample":102},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0,"sample":103},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0,"sample":104},{"desired_dataset":0.123669780827923,"predicted_dataset":0.0,"sample":105},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0,"sample":106},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0,"sample":107},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0,"sample":108},{"desired_dataset":0.0152942146900264,"predicted_dataset":0.0,"sample":109},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0,"sample":110},{"desired_dataset":0.00295958969093304,"predicted_dataset":0.0,"sample":111},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0,"sample":112},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0,"sample":113},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0,"sample":114},{"desired_dataset":-0.0247338498135276,"predicted_dataset":0.0,"sample":115},{"desired_dataset":-0.054402111088937,"predicted_dataset":0.0,"sample":116},{"desired_dataset":-0.0247338498135276,"predicted_dataset":0.0,"sample":117},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0,"sample":118},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0,"sample":119},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0,"sample":120},{"desired_dataset":0.00295958969093304,"predicted_dataset":0.0,"sample":121}]},"height":750,"layer":[{"encoding":{"x":{"field":"sample","type":"quantitative"},"y":{"field":"desired_dataset","type":"quantitative"}},"mark":"line"},{"encoding":{"x":{"field":"sample","type":"quantitative"},"y":{"field":"predicted_dataset","type":"quantitative"}},"mark":"point"}],"title":"ANFIS Output","width":780}
+```
+
+## Training phase
+
+```elixir
+System.hybrid_offline_learning(s_pid, inputs, outputs, 100)
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+## After Training
+
+```elixir
+predicted = Enum.map(inputs, fn input -> System.compute(s_pid, input) end)
+
+predicted_dataset =
+  for {index, predicted_data} <- Enum.zip(1..121, predicted), do: [index, predicted_data]
+
+desired_dataset =
+  for {index, desired_data} <- Enum.zip(1..121, outputs), do: [index, desired_data]
+
+my_data = %{predicted_dataset: predicted, desired_dataset: outputs, sample: 1..121}
+
+:ok
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
+
+<!-- livebook:{"attrs":{"chart_title":null,"height":750,"layers":[{"active":true,"chart_type":"point","color_field":null,"color_field_aggregate":null,"color_field_bin":null,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"my_data","geodata_color":"blue","latitude_field":null,"longitude_field":null,"x_field":"sample","x_field_aggregate":null,"x_field_bin":null,"x_field_scale_type":null,"x_field_type":"quantitative","y_field":"predicted_dataset","y_field_aggregate":null,"y_field_bin":null,"y_field_scale_type":null,"y_field_type":"quantitative"},{"active":true,"chart_type":"line","color_field":null,"color_field_aggregate":null,"color_field_bin":null,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"my_data","geodata_color":"blue","latitude_field":null,"longitude_field":null,"x_field":"sample","x_field_aggregate":null,"x_field_bin":null,"x_field_scale_type":null,"x_field_type":"quantitative","y_field":"desired_dataset","y_field_aggregate":null,"y_field_bin":null,"y_field_scale_type":null,"y_field_type":"quantitative"}],"vl_alias":"Elixir.VegaLite","width":780},"chunks":null,"kind":"Elixir.KinoVegaLite.ChartCell","livebook_object":"smart_cell"} -->
+
+```elixir
+VegaLite.new(width: 780, height: 750)
+|> VegaLite.data_from_values(my_data,
+  only: ["sample", "predicted_dataset", "desired_dataset"]
+)
+|> VegaLite.layers([
+  VegaLite.new()
+  |> VegaLite.mark(:point)
+  |> VegaLite.encode_field(:x, "sample", type: :quantitative)
+  |> VegaLite.encode_field(:y, "predicted_dataset", type: :quantitative),
+  VegaLite.new()
+  |> VegaLite.mark(:line)
+  |> VegaLite.encode_field(:x, "sample", type: :quantitative)
+  |> VegaLite.encode_field(:y, "desired_dataset", type: :quantitative)
+])
+```
+
+<!-- livebook:{"output":true} -->
+
+```vega-lite
+{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"values":[{"desired_dataset":0.00295958969093304,"predicted_dataset":-5.160802630185623e-4,"sample":1},{"desired_dataset":-0.00672789715494514,"predicted_dataset":-3.859470543926198e-4,"sample":2},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0019525446847401902,"sample":3},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0035887449098013884,"sample":4},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.03728190219283441,"sample":5},{"desired_dataset":-0.054402111088937,"predicted_dataset":-0.05567491153177847,"sample":6},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.018963366299440537,"sample":7},{"desired_dataset":0.0102929133555317,"predicted_dataset":9.535116735757777e-4,"sample":8},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0020223572374585383,"sample":9},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.0022598531300061487,"sample":10},{"desired_dataset":0.00295958969093304,"predicted_dataset":6.275633257423012e-4,"sample":11},{"desired_dataset":-0.00672789715494514,"predicted_dataset":3.8070816473427494e-4,"sample":12},{"desired_dataset":0.0152942146900264,"predicted_dataset":2.4711407989716375e-4,"sample":13},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-0.00355681631176353,"sample":14},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.002204356630627511,"sample":15},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.0874281582749993,"sample":16},{"desired_dataset":0.123669780827923,"predicted_dataset":0.10716311011648469,"sample":17},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.04231065609456126,"sample":18},{"desired_dataset":-0.0233983996811891,"predicted_dataset":8.923249991688932e-4,"sample":19},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-0.004341513267378436,"sample":20},{"desired_dataset":0.0152942146900264,"predicted_dataset":9.592595191748852e-5,"sample":21},{"desired_dataset":-0.00672789715494514,"predicted_dataset":-0.00861639326716727,"sample":22},{"desired_dataset":0.00253346549549811,"predicted_dataset":-5.281191753430005e-4,"sample":23},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-3.0490573368828386e-4,"sample":24},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.0020768737472883266,"sample":25},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.00391172763570084,"sample":26},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.03249565270084797,"sample":27},{"desired_dataset":-0.046569249699821,"predicted_dataset":-0.049714360812156924,"sample":28},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.01694502120030308,"sample":29},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0011358836810306068,"sample":30},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.0022098368832630653,"sample":31},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.002546602891835438,"sample":32},{"desired_dataset":0.00253346549549811,"predicted_dataset":8.847062335428328e-4,"sample":33},{"desired_dataset":0.0102929133555317,"predicted_dataset":-0.0010531879956514432,"sample":34},{"desired_dataset":-0.0233983996811891,"predicted_dataset":7.560852674181356e-4,"sample":35},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.007286145809734127,"sample":36},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.0035463489035996313,"sample":37},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.12173599119475313,"sample":38},{"desired_dataset":-0.189200623826982,"predicted_dataset":-0.16435453366768923,"sample":39},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.060509114203521154,"sample":40},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.0013252387780395781,"sample":41},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.00681199142409445,"sample":42},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.003406710221943316,"sample":43},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.00866926188306364,"sample":44},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.01034515585946672,"sample":45},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.04288224893309798,"sample":46},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.01751870779409946,"sample":47},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.07583253510370519,"sample":48},{"desired_dataset":0.206705452607952,"predicted_dataset":0.20546453450322627,"sample":49},{"desired_dataset":0.454648713412841,"predicted_dataset":0.45001233895740844,"sample":50},{"desired_dataset":0.206705452607952,"predicted_dataset":0.2017969873682074,"sample":51},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.07066080362445355,"sample":52},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.05047097282949654,"sample":53},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.06317869122318726,"sample":54},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.022537268632603604,"sample":55},{"desired_dataset":-0.054402111088937,"predicted_dataset":-0.0066099303239168855,"sample":56},{"desired_dataset":0.123669780827923,"predicted_dataset":0.07766509868926592,"sample":57},{"desired_dataset":-0.046569249699821,"predicted_dataset":-0.05214942993659108,"sample":58},{"desired_dataset":-0.189200623826982,"predicted_dataset":-0.150404865734235,"sample":59},{"desired_dataset":0.454648713412841,"predicted_dataset":0.4446481190772033,"sample":60},{"desired_dataset":1.0,"predicted_dataset":0.9854107312853814,"sample":61},{"desired_dataset":0.454648713412841,"predicted_dataset":0.4313810599411108,"sample":62},{"desired_dataset":-0.189200623826982,"predicted_dataset":-0.15986361330086296,"sample":63},{"desired_dataset":-0.046569249699821,"predicted_dataset":-0.1040474984167466,"sample":64},{"desired_dataset":0.123669780827923,"predicted_dataset":0.1438871487769054,"sample":65},{"desired_dataset":-0.054402111088937,"predicted_dataset":-0.04734852348855008,"sample":66},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.00564349681542975,"sample":67},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.031527131573741825,"sample":68},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.01904311561072686,"sample":69},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.06485725273869575,"sample":70},{"desired_dataset":0.206705452607952,"predicted_dataset":0.2116646642289375,"sample":71},{"desired_dataset":0.454648713412841,"predicted_dataset":0.4315095950992356,"sample":72},{"desired_dataset":0.206705452607952,"predicted_dataset":0.18439511763397873,"sample":73},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.05559357208722816,"sample":74},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.04190693877273411,"sample":75},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.04330506288386707,"sample":76},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.018581364027509446,"sample":77},{"desired_dataset":0.0102929133555317,"predicted_dataset":-0.004650176704778464,"sample":78},{"desired_dataset":-0.0233983996811891,"predicted_dataset":-0.002227597478670934,"sample":79},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.008347252845840961,"sample":80},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.001385485782164815,"sample":81},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.05506951646954495,"sample":82},{"desired_dataset":-0.189200623826982,"predicted_dataset":-0.0943065183195629,"sample":83},{"desired_dataset":-0.0860198201998443,"predicted_dataset":-0.04364662223591035,"sample":84},{"desired_dataset":0.0357968760565192,"predicted_dataset":0.011372227517820702,"sample":85},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.006568523299894113,"sample":86},{"desired_dataset":-0.0233983996811891,"predicted_dataset":-0.017818689603864374,"sample":87},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.00846393556000204,"sample":88},{"desired_dataset":0.00253346549549811,"predicted_dataset":-0.0037894129587373996,"sample":89},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-0.002518328539746849,"sample":90},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.006644929119402089,"sample":91},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.0029639249956075852,"sample":92},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.007508871777506097,"sample":93},{"desired_dataset":-0.046569249699821,"predicted_dataset":-0.036138231672104226,"sample":94},{"desired_dataset":-0.0211726494606249,"predicted_dataset":-0.022060411371789632,"sample":95},{"desired_dataset":0.00881093109436063,"predicted_dataset":0.012623255311950634,"sample":96},{"desired_dataset":0.00216869501760428,"predicted_dataset":0.005121720693516103,"sample":97},{"desired_dataset":-0.00575920890369767,"predicted_dataset":-0.01892512805923524,"sample":98},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.00511228579632669,"sample":99},{"desired_dataset":-0.00672789715494514,"predicted_dataset":-0.002610005881400253,"sample":100},{"desired_dataset":0.0152942146900264,"predicted_dataset":-0.001817676316397362,"sample":101},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.003968502621891789,"sample":102},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.0036810163848671213,"sample":103},{"desired_dataset":0.0562263067414631,"predicted_dataset":0.01900250306318563,"sample":104},{"desired_dataset":0.123669780827923,"predicted_dataset":0.0037145614901007793,"sample":105},{"desired_dataset":0.0562263067414631,"predicted_dataset":-0.004085323617296228,"sample":106},{"desired_dataset":-0.0233983996811891,"predicted_dataset":0.009231148454834264,"sample":107},{"desired_dataset":-0.00575920890369767,"predicted_dataset":0.0030791351751267887,"sample":108},{"desired_dataset":0.0152942146900264,"predicted_dataset":-0.012063623357795207,"sample":109},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.001928762974116593,"sample":110},{"desired_dataset":0.00295958969093304,"predicted_dataset":-9.201492482597074e-4,"sample":111},{"desired_dataset":-0.00672789715494514,"predicted_dataset":-7.14171273141435e-4,"sample":112},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.00206254890097759,"sample":113},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.005485229491169672,"sample":114},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.004752826611163203,"sample":115},{"desired_dataset":-0.054402111088937,"predicted_dataset":-0.016532694727909903,"sample":116},{"desired_dataset":-0.0247338498135276,"predicted_dataset":-0.005892020398919341,"sample":117},{"desired_dataset":0.0102929133555317,"predicted_dataset":0.0025477562671634944,"sample":118},{"desired_dataset":0.00253346549549811,"predicted_dataset":0.0027667093555483924,"sample":119},{"desired_dataset":-0.00672789715494514,"predicted_dataset":0.002401775201669535,"sample":120},{"desired_dataset":0.00295958969093304,"predicted_dataset":0.0012732694544752353,"sample":121}]},"height":750,"layer":[{"encoding":{"x":{"field":"sample","type":"quantitative"},"y":{"field":"predicted_dataset","type":"quantitative"}},"mark":"point"},{"encoding":{"x":{"field":"sample","type":"quantitative"},"y":{"field":"desired_dataset","type":"quantitative"}},"mark":"line"}],"width":780}
 ```
