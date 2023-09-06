@@ -1,6 +1,18 @@
-<!-- livebook:{"file_entries":[{"name":"Fuzzy-Controller.png","type":"attachment"},{"file":{"file_system_id":"local","path":"/home/alde/Documents/Elixir/repos/flex_playground/notebooks/anfis.livemd"},"name":"anfis.livemd","type":"file"},{"name":"error-dot-sets.png","type":"attachment"},{"name":"error_sets.png","type":"attachment"},{"name":"flex-logo.png","type":"attachment"},{"name":"output-sets.png","type":"attachment"},{"name":"rules-matrix.png","type":"attachment"},{"name":"rules.png","type":"attachment"},{"name":"temp-controller.png","type":"attachment"}]} -->
+<!-- livebook:{"file_entries":[{"name":"Fuzzy-Controller.png","type":"attachment"},{"file":{"file_system_id":"local","path":"/home/alde/Documents/Elixir/repos/flex_playground/notebooks/anfis.livemd"},"name":"anfis.livemd","type":"file"},{"name":"error-dot-sets.png","type":"attachment"},{"name":"error-sets.png","type":"attachment"},{"name":"error_sets.png","type":"attachment"},{"name":"flex-logo.png","type":"attachment"},{"name":"output-sets.png","type":"attachment"},{"name":"rules-matrix.png","type":"attachment"},{"name":"rules.png","type":"attachment"},{"name":"temp-controller.png","type":"attachment"}],"persist_outputs":true} -->
 
 # FLex Playground
+
+```elixir
+Mix.install([
+  {:flex, "~> 0.2"}
+])
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
+```
 
 ## Fuzzy Logic in Elixir
 
@@ -16,15 +28,6 @@ https://github.com/valiot/flex
 
 * Fuzzy Sets
 
-* Fuzzy Variables
-
-* Fuzzy Operators
-
-* Linguistic Rules:
-
-  * Lambda function syntax
-  * Tuple syntax
-
 * Membership functions:
 
   * Triangular
@@ -38,6 +41,15 @@ https://github.com/valiot/flex
   * S-shaped
   * Pi-shaped
   * Linear Combination (Takagi-Sugeno, ANFIS only)
+
+* Fuzzy Variables
+
+* Fuzzy Operators
+
+* Linguistic Rules:
+
+  * Lambda function syntax
+  * Tuple syntax
 
 * Fuzzy Inference Systems:
 
@@ -59,15 +71,7 @@ https://github.com/valiot/flex
 
 ![](files/Fuzzy-Controller.png)
 
-## Installation
-
-```elixir
-Mix.install([
-  {:flex, "~> 0.2"}
-])
-```
-
-## Setups
+## Imports & Aliases
 
 ```elixir
 import Flex.Rule
@@ -75,7 +79,15 @@ import IEx.Helpers
 alias Flex.{Rule, Set, System, Variable}
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+[Flex.Rule, Flex.Set, Flex.System, Flex.Variable]
+```
+
 ## Fuzzy Sets
+
+![](files/error-sets.png)
 
 ```elixir
 # Inputs
@@ -88,6 +100,27 @@ t_c = Set.new(tag: "too cold", mf_type: "shoulder", mf_params: [0, 2, 4])
 h(Set.new())
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+
+                                  def new(opt)                                  
+
+  @spec new(keyword()) :: t()
+
+Creates a Fuzzy set.
+
+The following options are require:
+
+  • :mf_type - (string) Defines which type of membership function uses the
+    set (e.g., "triangle").
+  • :tag - (string) defines the linguistic name of the fuzzy set (e.g.,
+    "too hot"),
+  • :mf_params - The parameters of the membership function, see Membership
+    functions.
+
+```
+
 ![](files/error-dot-sets.png)
 
 ```elixir
@@ -95,19 +128,46 @@ h(Set.new())
 g_h = Set.new(tag: "getting hotter", mf_type: "saturation", mf_params: [-5, 0, -10])
 n_c = Set.new(tag: "no change", mf_type: "triangle", mf_params: [-5, 0, 5])
 g_c = Set.new(tag: "getting colder", mf_type: "shoulder", mf_params: [0, 5, 10])
+:ok
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
 ```
 
 ![](files/output-sets.png)
 
 ```elixir
-# Outputs
+# Output
 
-## Fan
 co = Set.new(tag: "cool", mf_type: "saturation", mf_params: [-50, 0, -100])
 d_n = Set.new(tag: "do nothing", mf_type: "triangle", mf_params: [-50, 0, 50])
 he = Set.new(tag: "heat", mf_type: "shoulder", mf_params: [0, 50, 100])
 
 h(Set.new())
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+
+                                  def new(opt)                                  
+
+  @spec new(keyword()) :: t()
+
+Creates a Fuzzy set.
+
+The following options are require:
+
+  • :mf_type - (string) Defines which type of membership function uses the
+    set (e.g., "triangle").
+  • :tag - (string) defines the linguistic name of the fuzzy set (e.g.,
+    "too hot"),
+  • :mf_params - The parameters of the membership function, see Membership
+    functions.
+
 ```
 
 ## Fuzzy Variables
@@ -129,11 +189,32 @@ dt_error =
 
 # Output
 
-## Fan Variable
 fuzzy_sets = [co, d_n, he]
 output = Variable.new(tag: "output", fuzzy_sets: fuzzy_sets, type: :consequent, range: -100..100)
 
 h(Variable.new())
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+
+                                def new(params)                                 
+
+  @spec new(keyword()) :: t()
+
+Creates a Fuzzy Variable.
+
+The following options are require:
+
+  • :tag - (string) Defines the linguistic name of the fuzzy variable
+    (e.g., "error"),
+  • :fuzzy_sets - (list) Defines which type of membership function use the
+    set (e.g., "triangle").
+  • :type - (atom) Defines the type of variable (e.g., :antecedent or
+    :consequent),
+  • :range - (range) The range in which the variable exists.
+
 ```
 
 ## Fuzzy Rules
@@ -202,6 +283,22 @@ rules = [rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9]
 h(Rule.new())
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+
+                                def new(params)                                 
+
+Creates a Linguistic Rule.
+
+The following options are require:
+
+  • :statement - Defines the rule behavior.
+  • :antecedent - (list) Defines the input variables.
+  • :consequent - Defines the output variable.
+
+```
+
 ![](files/rules-matrix.png)
 
 ## Fuzzy System
@@ -212,6 +309,22 @@ h(Rule.new())
 {:ok, s_pid} = System.start_link(antecedent: [error, dt_error], consequent: output, rules: rules)
 
 h(System.start_link())
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+
+                       def start_link(params, opt \\ [])                        
+
+Spawns a Fuzzy Logic System.
+
+The following options are require:
+
+  • :rules - Defines the behavior of the system based on a list of rules.
+  • :antecedent - (list) Defines the input variables.
+  • :consequent - Defines the output variable.
+
 ```
 
 ## Executions
@@ -237,6 +350,12 @@ h(System.start_link())
 output = System.compute(s_pid, [-1, -2.5])
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+-63.39745962155614
+```
+
 ```elixir
 # Inputs
 
@@ -253,6 +372,12 @@ output = System.compute(s_pid, [-1, -2.5])
 output = System.compute(s_pid, [0, 0])
 ```
 
+<!-- livebook:{"output":true} -->
+
+```
+0.0
+```
+
 ```elixir
 # Inputs
 
@@ -263,13 +388,19 @@ output = System.compute(s_pid, [0, 0])
 
 # The following rules were fired:
 
-# r4 = (at1 ~> "too cold" &&& at2 ~> "no change") >>> con ~> "heat"
+# r6 = (at1 ~> "too cold" &&& at2 ~> "no change") >>> con ~> "heat"
 # r5 = (at1 ~> "just right" &&& at2 ~> "no change") >>> con ~> "do nothing"
-# r7 = (at1 ~> "too cold" &&& at2 ~> "getting colder") >>> con ~> "heat"
-# r8 = (at1 ~> "just right" &&& at2 ~> "getting colder") >>> con ~> "heat"
+# r3 = (at1 ~> "too cold" &&& at2 ~> "getting colder") >>> con ~> "heat"
+# r2 = (at1 ~> "just right" &&& at2 ~> "getting colder") >>> con ~> "heat"
 
 # therefore the Fan should "cool".
 output = System.compute(s_pid, [1, 2.5])
 ```
 
-<!-- livebook:{"offset":6760,"stamp":{"token":"QTEyOEdDTQ.O2_pvDpRsk_MQlHZnFligsabwyakrQWBiGz4YsrNQeq3v-cMstv_z9qDEL4.p2-xsxERGIOAgAq2.98pbtKNe9rLa2E0cWGb0l4a-lxBN6RrJLDQq8xDP8HPewwCWYG98e-XIjPRURbyHwbjatp9DIFIQsw.sIF9lmg1CY9bRAVV9-ecpA","version":1}} -->
+<!-- livebook:{"output":true} -->
+
+```
+63.39745962155614
+```
+
+<!-- livebook:{"offset":9492,"stamp":{"token":"QTEyOEdDTQ.WGAv1owwibZPPg-Io4kmHcHJzMRIGfoZPWN1Vg6276ANV_18HfcZccG6dX8.42YdgPIVgt2waccc.aSuMJZG8awRDrrO7GWOC7-8KOR6NjwF43h66BdodJV7zBjnTcMALIefm4RehSlNa2YDNYtiNa3o9aQ.BvLFK2oqp_RUpqhnbu606A","version":1}} -->
